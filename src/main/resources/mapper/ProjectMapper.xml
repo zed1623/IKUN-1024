@@ -4,7 +4,7 @@
 <mapper namespace="com.ljh.mapper.ProjectMapper">
 
     <insert id="insertProject" useGeneratedKeys="true" keyProperty="id" parameterType="com.ljh.pojo.entity.Project">
-        INSERT INTO Project (name, owner_login, repo_url, stars, forks, issues, created_at, updated_at, importance_score)
+        INSERT INTO project (name, owner_login, repo_url, stars, forks, issues, created_at, updated_at, importance_score)
         VALUES (#{name}, #{ownerLogin}, #{repoUrl}, #{stars}, #{forks}, #{issues}, #{createdAt}, #{updatedAt}, #{importanceScore});
     </insert>
 

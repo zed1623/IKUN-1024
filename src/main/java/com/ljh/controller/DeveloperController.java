@@ -1,9 +1,13 @@
-package com.ljh.controller;//package com.ljh.controller.admin;
+package com.ljh.controller;
 
+import com.ljh.pojo.entity.Developer;
 import com.ljh.properties.JwtProperties;
+import com.ljh.result.Result;
+import com.ljh.service.DeveloperService;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,11 +24,15 @@ public class DeveloperController {
     @Autowired
     private JwtProperties jwtProperties;
 
+    @Autowired
+    private DeveloperService developerService;
 
-//    @PostMapping("/add")
-//    public Result<> add( Developer developer) {
-//
-//    };
+
+    @PostMapping("/getDeveloper")
+    public Result<String> getDeveloper() {
+        developerService.getDeveloper();
+        return Result.success();
+    };
 
 //    /**
 //     * 登录

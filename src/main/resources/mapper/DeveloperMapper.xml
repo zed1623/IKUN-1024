@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ljh.mapper.DeveloperMapper">
+
+
+    <insert id="saveContributorToDatabase">
+        INSERT INTO developer (login)
+        VALUES (#{login});
+    </insert>
+
+    <select id="getTop10Developers" resultType="java.lang.String">
+        SELECT login
+        FROM developer
+        ORDER BY id DESC
+        LIMIT 10
+    </select>
+
+    <update id="updateDeveloperByLogin" parameterType="com.ljh.pojo.entity.Developer">
+        UPDATE developer
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            <if test="blogUrl != null">blog_url = #{blogUrl},</if>
+            <if test="profileUrl != null">profile_url = #{profileUrl},</if>
+            <if test="bio != null">bio = #{bio},</if>
+            <if test="nation != null">nation = #{nation},</if>
+            <if test="nationConfidence != null">nation_confidence = #{nationConfidence},</if>
+            <if test="field != null">field = #{field},</if>
+            <if test="talentRank != null">talent_rank = #{talentRank},</if>
+<!--            <if test="createdAt != null">created_at = #{createdAt},</if>-->
+<!--            <if test="updatedAt != null">updated_at = #{updatedAt},</if>-->
+        </set>
+        WHERE login = #{login}
+    </update>
+
+    <update id="updateDeveloperInfo">
+        UPDATE developer
+        <set>
+            <!-- 判断字段是否为 null，非 null 时才更新 -->
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="email != null">
+                email = #{email},
+            </if>
+            <if test="blogUrl != null">
+                blog_url = #{blogUrl},
+            </if>
+            <if test="profileUrl != null">
+                profile_url = #{profileUrl},
+            </if>
+            <if test="bio != null">
+                bio = #{bio},
+            </if>
+        </set>
+        WHERE login = #{login}  <!-- 这里假设 login 是唯一标识 -->
+    </update>
+
+</mapper>

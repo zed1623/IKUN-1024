@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 项目实体类，存储 GitHub 上的开源项目的基本信息，用于评估开发者的贡献度和项目的重要性。
  */
@@ -52,12 +54,12 @@ public class Project {
     /**
      * 项目创建时间
      * */
-    private java.util.Date createdAt;
+    private LocalDateTime createdAt;
 
     /**
      * 项目最后更新时间
      * */
-    private java.util.Date updatedAt;
+    private LocalDateTime updatedAt;
 
     /**
      * 项目的重要性评分（根据星标、fork 等权重计算）
@@ -68,6 +70,8 @@ public class Project {
      * 项目关联的其他项目，用于表示该项目与其他项目的关系（例如被 Fork 或引用）。
      */
     private String[] linkedProjects;
+
+
 
 }
 
