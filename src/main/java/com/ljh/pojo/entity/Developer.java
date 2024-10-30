@@ -79,10 +79,10 @@ public class Developer {
     /**
      * 开发者账号创建时间
      * */
-    private LocalDateTime createdAt;
+    private String createdAt;
 
     /**
      * 最后更新时间
      * */
-    private LocalDateTime updatedAt;
+    private String updatedAt;
 }

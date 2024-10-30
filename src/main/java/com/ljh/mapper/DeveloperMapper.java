@@ -14,16 +14,12 @@ public interface DeveloperMapper {
     void saveContributorToDatabase(String username);
 
     /**
-     *
+     * 返回项目前10名贡献者
      * @return
      */
     List<String> getTop10Developers();
 
-    // 插入开发者信息
-
-
     void updateDeveloperByLogin(Developer developer);
 
-
-    void updateDeveloperInfo(String login, String name, String email, String blogUrl, String profileUrl, String bio);
+    void updateDeveloperInfo(String login, String name, String email, String blogUrl, String profileUrl, String bio,String createdAt, String updatedAt);
 }
