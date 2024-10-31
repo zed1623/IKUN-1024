@@ -1,0 +1,119 @@
+<template>
+  <div class="project-stats-page">
+    <!-- 项目基本信息区 -->
+    <el-card class="project-info" shadow="hover">
+      <h2>项目基本信息</h2>
+      <p>项目名称: Example Project</p>
+      <p>Stars: 1234</p>
+      <p>Forks: 567</p>
+      <p>Issues: 89</p>
+    </el-card>
+
+    <!-- 统计指标概览区 -->
+    <el-card class="overview-stats" shadow="hover">
+      <h2>统计指标概览</h2>
+      <div class="flex">
+        <div class="stat-card">总贡献者数: 50</div>
+        <div class="stat-card">总提交次数: 200</div>
+        <div class="stat-card">代码总变更行数: 1500</div>
+        <div class="stat-card">月均提交量: 20</div>
+      </div>
+    </el-card>
+
+    <!-- 贡献者活跃度分析 -->
+    <el-card class="contributor-activity" shadow="hover">
+      <h2>贡献者活跃度分析</h2>
+      <p>图表：每月新增贡献者数 & 提交频率</p>
+    </el-card>
+
+    <!-- 代码变更统计 -->
+    <el-card class="code-changes" shadow="hover">
+      <h2>代码变更统计</h2>
+      <p>图表：代码行数变化（增减行数）</p>
+      <p>主要变更文件</p>
+    </el-card>
+
+    <!-- 代码质量分析 -->
+    <el-card class="code-quality" shadow="hover">
+      <h2>代码质量分析</h2>
+      <p>图表：Issue 处理情况 & Pull Request 合并情况</p>
+    </el-card>
+
+    <!-- 交互功能 -->
+    <el-card class="interactive-tools" shadow="hover">
+      <div class="button-group">
+        <el-button>时间筛选</el-button>
+        <el-button>贡献者筛选</el-button>
+        <el-button>导出数据</el-button>
+        <el-button>切换图表</el-button>
+      </div>
+    </el-card>
+  </div>
+</template>
+
+<script setup>
+import { ref } from "vue";
+
+// 定义响应式数据
+const message = ref("项目分析");
+
+// 在这里编写你的 Composition API 代码
+</script>
+
+<style scoped lang="scss">
+.project-stats-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  font-family: Arial, sans-serif;
+
+  .el-card {
+    padding: 20px;
+    border-radius: 8px; // 调整圆角
+  }
+
+  /* 项目基本信息区标题 */
+  .project-info h2,
+  .contributor-activity h2,
+  .code-changes h2,
+  .code-quality h2 {
+    font-size: 1.2em;
+    color: #333;
+    margin: 0 0 10px;
+  }
+
+  /* 统计指标概览区，保持原有的 flex 布局 */
+  .overview-stats {
+    text-align: center;
+
+    .flex {
+      display: flex;
+      gap: 10px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background-color: #e0f7fa;
+      padding: 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  /* 交互功能按钮 */
+  .interactive-tools {
+    display: flex;
+    gap: 10px;
+    justify-content: space-around;
+
+    .el-button {
+      padding: 10px 15px;
+      font-size: 0.9em;
+    }
+  }
+}
+</style>

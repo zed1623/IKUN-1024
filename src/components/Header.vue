@@ -3,21 +3,35 @@
     <div class="logo">
       <h1>DARPC</h1>
     </div>
-    <ul class="nav-links">
-      <li><router-link to="/">首页</router-link></li>
-      <li><router-link to="/about">项目分析</router-link></li>
-      <li><router-link to="/about">个人信息</router-link></li>
-      <li><router-link to="/about">成员位置</router-link></li>
+    <div class="nav-links">
+      <router-link to="/"><div class="pointer">首页</div></router-link>
+
+      <router-link to="/overview">
+        <div class="pointer">项目概况</div></router-link
+      >
+
+      <router-link to="/analyse">
+        <div class="pointer">项目分析</div></router-link
+      >
+
+      <router-link to="/personal">
+        <div class="pointer">个人信息</div></router-link
+      >
+
+      <router-link to="/location">
+        <div class="pointer">成员位置</div></router-link
+      >
+
       <!-- <li>个人分析</li>
       <li>成员位置</li> -->
       <el-input
         v-model="input"
-        style="width: 600px"
+        style="width: 600px; margin-left: 20px"
         placeholder="请输入仓库地址"
         :prefix-icon="Search"
       />
       <!-- <li><router-link to="/contact">Contact</router-link></li> -->
-    </ul>
+    </div>
   </div>
 </template>
 
@@ -37,7 +51,7 @@ const input = ref("");
   background: linear-gradient(
     to right,
     rgba(161, 71, 118, 1),
-    rgba(51, 51, 51, 0)
+    rgb(255, 255, 255, 1)
   );
   color: white;
   padding: 10px 20px;
@@ -52,22 +66,32 @@ const input = ref("");
   }
 
   .nav-links {
-    list-style: none;
     display: flex;
-    gap: 20px;
-
-    li {
-      display: inline;
-
+    gap: 5px;
+    margin-left: 20px;
+    .pointer {
+      color: white;
+      font-weight: 600;
+      text-align: center;
+      display: inline-block;
+      width: 80px;
+      height: 40px;
+      line-height: 40px;
+      border-radius: 20%;
+      background-color: transparent;
+      transition: background-color 1s ease;
+      &:hover {
+        background-color: black;
+        transition-delay: 0s;
+      }
       a {
         color: white;
         text-decoration: none;
         font-weight: bold;
-
-        &:hover {
-          text-decoration: underline;
-        }
       }
+    }
+    .router-link-active > .pointer {
+      background-color: black;
     }
   }
 }
