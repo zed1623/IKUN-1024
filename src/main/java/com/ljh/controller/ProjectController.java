@@ -1,5 +1,6 @@
 package com.ljh.controller;
 
+import com.ljh.pojo.entity.Project;
 import com.ljh.properties.JwtProperties;
 import com.ljh.result.Result;
 import com.ljh.service.ProjectService;
@@ -28,7 +29,7 @@ public class ProjectController {
 
 
     /**
-     * 接收前端传过来的url
+     * 查询指定 GitHub 项目的信息
      * @param url
      * @return
      */
@@ -37,4 +38,17 @@ public class ProjectController {
         projectService.analyseUrl(url);
         return  Result.success();
     }
+
+    /**
+     * 通过 URL 查询指定项目的信息。
+     * @param url
+     * @return
+     */
+    @PostMapping("/selectUrl")
+    public Result<Project> selectUrl(String url) {
+         Project project =  projectService.selectUrl(url);
+        return  Result.success(project);
+    }
+
+
 }

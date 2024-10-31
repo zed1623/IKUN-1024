@@ -22,6 +22,11 @@ public class Developer {
     private long id;
 
     /**
+     * 项目id
+     * */
+    private String projectUrl;
+
+    /**
      * GitHub 用户名
      * */
     private String login;

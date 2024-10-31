@@ -1,7 +1,14 @@
 package com.ljh.service.impl;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.ljh.exception.BaseException;
 import com.ljh.mapper.DeveloperMapper;
+import com.ljh.mapper.ProjectMapper;
+import com.ljh.pojo.dto.DeveloperPageQueryDTO;
 import com.ljh.pojo.entity.Developer;
+import com.ljh.pojo.entity.Project;
+import com.ljh.result.PageResult;
 import com.ljh.service.DeveloperService;
 import com.ljh.utils.BaiduTranslate;
 import org.json.JSONArray;
@@ -24,7 +31,9 @@ public class DeveloperServiceImpl implements DeveloperService {
 
     private static final String GITHUB_USER_API_URL = "https://api.github.com/users/";
     private static final String GITHUB_EVENTS_API_URL = "https://api.github.com/users/%s/events/public";
+    private static final String GITHUB_REPOS_API_URL = "https://api.github.com/repos/%s/%s/stats/contributors";
     private static final String token = "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";
+
 
     private static final String GEO_NAMES_USERNAME = "xiaoshang";
     private static final String GEO_NAMES_API_URL = "http://api.geonames.org/searchJSON?q=";
@@ -34,6 +43,13 @@ public class DeveloperServiceImpl implements DeveloperService {
     @Autowired
     private BaiduTranslate baiduTranslate;
 
+    @Autowired
+    private ProjectMapper projectMapper; // 项目 Mapper
+
+    /**
+     * 通过github API 查询项目贡献者的信息
+     *
+     */
     @Override
     public void getDeveloper() {
         List<String> developers = developerMapper.getTop10Developers();
@@ -42,6 +58,7 @@ public class DeveloperServiceImpl implements DeveloperService {
             try {
                 // 1. 获取 GitHub 用户信息
                 String githubApiUrl = GITHUB_USER_API_URL + username;
+                Map<String, Object> map = analyzeContributorActivity(username);
                 JSONObject userInfo = getGitHubUserInfo(githubApiUrl);
                 if (userInfo != null) {
                     Developer developer = new Developer();
@@ -53,6 +70,9 @@ public class DeveloperServiceImpl implements DeveloperService {
                     developer.setProfileUrl(userInfo.optString("html_url", "N/A"));
                     developer.setBio(userInfo.optString("bio", "N/A"));
 
+                    // 计算 TalentRank
+                    float talentRank = calculateTalentRank(username);
+                    developer.setTalentRank(talentRank);
                     // 2. 获取并设置国家信息
                     String location = userInfo.optString("location", "N/A");
                     String nation = guessNationFromLocation(location);
@@ -87,13 +107,44 @@ public class DeveloperServiceImpl implements DeveloperService {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new BaseException("通过github API 查询项目贡献者的信息：" + e.getMessage());
             }
         }
     }
 
     /**
+     * 根据用户名查找用户信息
+     *
+     * @param login 用户的登录名
+     * @return
+     */
+    @Override
+    public Developer getLoginDeveloper(String login) {
+        try {
+            return developerMapper.findDeveloperByLogin(login); // 调用MyBatis映射的方法
+        } catch (Exception e) {
+            throw new BaseException("根据用户名查找用户信息失败:" + e.getMessage());
+        }
+    }
+
+    /**
+     * 用户分页查询
+     *
+     * @param developerPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult pageQuery(DeveloperPageQueryDTO developerPageQueryDTO) {
+        PageHelper.startPage(developerPageQueryDTO.getPage(),developerPageQueryDTO.getPageSize());
+        //下一条sql进行分页，自动加入limit关键字分页
+        Page<Developer> page = developerMapper.pageQuery(developerPageQueryDTO);
+        return new PageResult(page.getTotal(), page.getResult());
+    }
+
+    /**
      * 根据 GitHub API 获取用户信息
+     * @param urlString
+     * @return
      */
     private JSONObject getGitHubUserInfo(String urlString) {
         try {
@@ -111,16 +162,104 @@ public class DeveloperServiceImpl implements DeveloperService {
                     content.append(inputLine);
                 }
                 in.close();
+
                 return new JSONObject(content.toString());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new BaseException("根据 GitHub API 获取用户信息失败："+ e.getMessage());
         }
         return null;
     }
 
     /**
+     * 分析贡献者的活跃度
+     *
+     * @param username 用户名
+     * @return 活跃度分析结果
+     */
+    public Map<String, Object> analyzeContributorActivity(String username) {
+        Map<String, Object> activityReport = new HashMap<>();
+        try {
+            String eventsUrl = String.format(GITHUB_EVENTS_API_URL, username);
+            URL url = new URL(eventsUrl);
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "token " + token);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder content = new StringBuilder();
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine);
+                }
+                in.close();
+                connection.disconnect();
+
+                // 解析事件信息
+                JSONArray events = new JSONArray(content.toString());
+                Map<Integer, Integer> hourFrequency = new HashMap<>();
+                int totalEvents = events.length();
+                LocalDateTime latestEventTime = null;
+                int commitEvents = 0;
+                int totalCommits = 0;
+
+                for (int i = 0; i < events.length(); i++) {
+                    JSONObject event = events.getJSONObject(i);
+                    String type = event.getString("type");
+                    System.out.println("Event type: " + type);
+
+                    if (type.equals("PushEvent")) {
+                        commitEvents++;
+                        // 提取 PushEvent 中的提交数量
+                        JSONObject payload = event.getJSONObject("payload");
+                        if (payload.has("commits")) {
+                            JSONArray commitsArray = payload.getJSONArray("commits");
+                            totalCommits += commitsArray.length(); // 统计提交数量
+                        }
+                    }
+
+                    String createdAt = event.getString("created_at");
+                    LocalDateTime eventTime = LocalDateTime.parse(createdAt, DateTimeFormatter.ISO_DATE_TIME);
+                    int hour = eventTime.getHour();
+                    hourFrequency.put(hour, hourFrequency.getOrDefault(hour, 0) + 1);
+
+                    if (latestEventTime == null || eventTime.isAfter(latestEventTime)) {
+                        latestEventTime = eventTime;
+                    }
+                }
+
+                // 计算活跃时间
+                int peakHour = hourFrequency.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .map(Map.Entry::getKey)
+                        .orElse(-1);
+
+                activityReport.put("总事件数：", totalEvents);
+                activityReport.put("提交事件数：", commitEvents);
+                activityReport.put("添加总提交数：", totalCommits); // 添加总提交数
+                activityReport.put("高峰时段：", peakHour);
+                activityReport.put("最新活动时间：", latestEventTime);
+                activityReport.put("每小时活动分布：", hourFrequency);
+
+                System.out.println("活跃度分析结果: " + activityReport);
+            } else {
+                System.out.println("获取贡献者活动信息失败，HTTP 响应码：" + responseCode);
+                connection.disconnect();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return activityReport;
+    }
+
+    /**
      * 根据 location 通过 GeoNames API 获取国家名称，并将其翻译为中文
+     * @param location
+     * @return
      */
     private String guessNationFromLocation(String location) {
         if (location == null || location.equals("N/A")) {
@@ -155,8 +294,11 @@ public class DeveloperServiceImpl implements DeveloperService {
         return "N/A";
     }
 
+
     /**
      * 获取用户活动事件，并推断时区
+     * @param username
+     * @return
      */
     private String getUserTimezoneFromEvents(String username) {
         try {
@@ -184,13 +326,15 @@ public class DeveloperServiceImpl implements DeveloperService {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new BaseException("获取指定用户活动事件失败：" + e.getMessage());
         }
         return "Unknown Timezone";
     }
 
     /**
      * 分析用户事件时间推断时区
+     * @param events
+     * @return
      */
     private String analyzeEventsForTimezone(JSONArray events) {
         Map<Integer, Integer> hourFrequency = new HashMap<>();
@@ -220,9 +364,10 @@ public class DeveloperServiceImpl implements DeveloperService {
         return "Unknown Timezone";
     }
 
-
     /**
      * 根据时区推测大洲
+     * @param timezone
+     * @return
      */
     private String guessContinentFromTimezone(String timezone) {
         switch (timezone) {
@@ -246,6 +391,11 @@ public class DeveloperServiceImpl implements DeveloperService {
         }
     }
 
+    /**
+     * 根据编程语言推测国家
+     * @param username
+     * @return
+     */
     private String guessNationFromLanguages(String username) {
         try {
             String reposUrl = String.format("https://api.github.com/users/%s/repos", username);
@@ -288,7 +438,7 @@ public class DeveloperServiceImpl implements DeveloperService {
                 return guessNationFromLanguage(dominantLanguage);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new BaseException("根据编程语言推测国家失败：" + e.getMessage());
         }
         return "N/A";
     }
@@ -311,6 +461,84 @@ public class DeveloperServiceImpl implements DeveloperService {
             default:
                 return "N/A";
         }
+    }
+
+    /**
+     * 计算开发者的 TalentRank
+     * @param username
+     * @return
+     */
+    private float calculateTalentRank(String username) {
+        float talentRank = 0.0f;
+        String url = developerMapper.findContributorToDatabase(username);
+        Project project = projectMapper.getProjectsForDeveloper(url); // 获取该开发者参与的项目
+
+        double importanceScore = project.getImportanceScore();
+        int contributionScore = getContributionScore(username, project.getName(), project.getOwnerLogin());
+        System.out.println("contribution score: " + contributionScore);
+
+        // 使用公式计算 TalentRank
+        double rawScore = importanceScore * contributionScore;
+
+        // 假设我们使用一个固定的最大值进行缩放，例如 maxScore = 1000.0；
+        // 如果你有动态的最大值，可以通过分析历史数据或全局计算得到。
+        double maxScore = 1000.0;  // 根据数据情况调整此值
+
+        // 将 rawScore 缩放到 1 到 100 的范围
+        if (rawScore > 0) {
+            talentRank = (float) ((rawScore / maxScore) * 100);
+        }
+
+        // 确保结果在 1 到 100 之间，最小值为 1
+        talentRank = Math.max(1.0f, Math.min(100.0f, talentRank));
+
+        return talentRank;
+    }
+
+
+    /**
+     * 获取开发者对指定项目的贡献分数
+     * @param username
+     * @param repoName
+     * @param owner
+     * @return
+     */
+    private int getContributionScore(String username, String repoName, String owner) {
+        int contributions = 0;
+
+        try {
+            String repoUrl = String.format(GITHUB_REPOS_API_URL, owner, repoName);
+            URL url = new URL(repoUrl);
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "token " + token);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder content = new StringBuilder();
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine);
+                }
+                in.close();
+
+                // 获取贡献信息
+                JSONArray contributors = new JSONArray(content.toString());
+                for (int i = 0; i < contributors.length(); i++) {
+                    JSONObject contributor = contributors.getJSONObject(i);
+                    if (contributor.getJSONObject("author").getString("login").equals(username)) {
+                        contributions = contributor.getInt("total");
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new BaseException("获取开发者对指定项目的贡献分数：" + e.getMessage());
+        }
+
+        return contributions;
     }
 
 

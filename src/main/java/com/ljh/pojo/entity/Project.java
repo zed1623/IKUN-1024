@@ -21,10 +21,31 @@ public class Project {
      * */
     private long id;
 
+
     /**
      * 项目名称
      * */
     private String name;
+
+    /**
+     * 项目成员数量
+     */
+    private int projectUser;
+
+    /**
+     * 项目总提交数
+     */
+    private int totalCommits;
+
+    /**
+     * 项目总代码行数
+     */
+    private int projectCode;
+
+    /**
+     * 项目介绍
+     */
+    private String description;
 
     /**
      * 项目所有者的 GitHub 用户名

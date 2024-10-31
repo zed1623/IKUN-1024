@@ -1,15 +1,15 @@
 package com.ljh.controller;
 
+import com.ljh.pojo.dto.DeveloperPageQueryDTO;
 import com.ljh.pojo.entity.Developer;
 import com.ljh.properties.JwtProperties;
+import com.ljh.result.PageResult;
 import com.ljh.result.Result;
 import com.ljh.service.DeveloperService;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 员工管理
@@ -28,11 +28,39 @@ public class DeveloperController {
     private DeveloperService developerService;
 
 
-    @PostMapping("/getDeveloper")
+    /**
+     * 通过github API 查询项目贡献者的信息
+     * @param
+     * @return
+     */
+    @GetMapping("/getDeveloper")
     public Result<String> getDeveloper() {
         developerService.getDeveloper();
         return Result.success();
     };
+
+    /**
+     * 根据用户查找用户信息
+     * @param login
+     * @return
+     */
+    @PostMapping("/getLoginDeveloper")
+    public Result<Developer> getLoginDeveloper(String login) {
+        Developer developer =  developerService.getLoginDeveloper(login);
+        return Result.success(developer);
+    };
+
+    /**
+     * 用户分页查询
+     * @param developerPageQueryDTO
+     * @return
+     */
+    @GetMapping("/page")
+    public Result<PageResult> page(DeveloperPageQueryDTO developerPageQueryDTO){
+        log.info("分页查询：{}", developerPageQueryDTO);
+        PageResult pageResult = developerService.pageQuery(developerPageQueryDTO);
+        return Result.success(pageResult);
+    }
 
 //    /**
 //     * 登录

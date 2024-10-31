@@ -14,7 +14,9 @@ public class SimpleProjectScorer {
      */
     public static double calculateScore(int stars, int forks) {
         // 计算评分：星标数量 * 权重 + Fork 数量 * 权重
-        double score = (stars * STAR_WEIGHT) + (forks * FORK_WEIGHT);
+        // 缩小评分值
+        double adjustmentFactor = 0.001;
+        double score = ((stars * STAR_WEIGHT) + (forks * FORK_WEIGHT))* adjustmentFactor;
         return score;
     }
 }
