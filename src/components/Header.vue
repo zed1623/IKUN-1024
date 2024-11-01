@@ -1,10 +1,10 @@
 <template>
   <div class="header">
-    <div class="logo">
+    <div class="logo" @click="toHome">
       <h1>DARPC</h1>
     </div>
     <div class="nav-links">
-      <router-link to="/"><div class="pointer">首页</div></router-link>
+      <router-link to="/"><div class="pointer homeNav">首页</div></router-link>
 
       <router-link to="/overview">
         <div class="pointer">项目概况</div></router-link
@@ -21,6 +21,7 @@
       <router-link to="/location">
         <div class="pointer">成员位置</div></router-link
       >
+      <router-link to="/chat"> <div class="pointer">AI分析</div></router-link>
 
       <!-- <li>个人分析</li>
       <li>成员位置</li> -->
@@ -38,7 +39,15 @@
 <script setup>
 import { Search } from "@element-plus/icons-vue";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
 const input = ref("");
+const toHome = () => {
+  console.log("jump");
+
+  router.push("/");
+};
 </script>
 
 <style scoped lang="scss">
@@ -60,6 +69,8 @@ const input = ref("");
   align-items: center;
   z-index: 999;
   .logo {
+    cursor: pointer;
+    user-select: none;
     h1 {
       margin: 0;
     }
@@ -69,7 +80,11 @@ const input = ref("");
     display: flex;
     gap: 5px;
     margin-left: 20px;
+    .homeNav {
+      margin-right: -1px;
+    }
     .pointer {
+      user-select: none;
       color: white;
       font-weight: 600;
       text-align: center;
