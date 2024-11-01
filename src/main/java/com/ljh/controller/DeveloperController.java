@@ -9,11 +9,13 @@ import com.ljh.service.DeveloperService;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 员工管理
- */
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+
+
 @RestController
 @RequestMapping("/developer")
 @Slf4j
@@ -61,6 +63,39 @@ public class DeveloperController {
         PageResult pageResult = developerService.pageQuery(developerPageQueryDTO);
         return Result.success(pageResult);
     }
+
+    /**
+     * 导出用户信息为excel表格
+     * @param response
+     * @return
+     */
+    @GetMapping("/exportDevelopers")
+    public Result<String> exportDevelopers(HttpServletResponse response) {
+        developerService.exportDevelopersToExcel(response);
+        return Result.success();
+    }
+
+    /**
+     * 删除用户信息的接口
+     * @return
+     */
+    @DeleteMapping("/deleteProjectUrl")
+    public Result<String> deleteDeveloper(String projectUrl) {
+        developerService.deleteDeveloper(projectUrl);
+        return Result.success();
+    }
+
+    /**
+     * 根据nation查询用户信息
+     * @param nation
+     * @return
+     */
+    @PostMapping("/developersNation")
+    public Result<List<Developer>> getDevelopersByNation(String nation) {
+       List<Developer> developerList = developerService.getDevelopersByNation(nation);
+        return Result.success(developerList);
+    }
+
 
 //    /**
 //     * 登录

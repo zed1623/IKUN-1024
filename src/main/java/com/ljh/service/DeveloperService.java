@@ -5,6 +5,9 @@ import com.ljh.pojo.dto.DeveloperPageQueryDTO;
 import com.ljh.pojo.entity.Developer;
 import com.ljh.result.PageResult;
 
+import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+
 public interface DeveloperService {
 
 
@@ -26,4 +29,23 @@ public interface DeveloperService {
      * @return
      */
     PageResult pageQuery(DeveloperPageQueryDTO developerPageQueryDTO);
+
+    /**
+     * 导出用户信息为excel表格
+     * @param response
+     */
+    void exportDevelopersToExcel(HttpServletResponse response);
+
+    /**
+     * 删除所有用户信息
+     * @param projectUrl
+     */
+    void deleteDeveloper(String projectUrl);
+
+    /**
+     * 根据nation查询用户信息
+     * @param nation
+     * @return
+     */
+    List<Developer> getDevelopersByNation(String nation);
 }

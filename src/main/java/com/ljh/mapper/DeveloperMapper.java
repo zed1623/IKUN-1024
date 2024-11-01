@@ -40,4 +40,23 @@ public interface DeveloperMapper {
      * @return
      */
     Page<Developer> pageQuery(DeveloperPageQueryDTO developerPageQueryDTO);
+
+    /**
+     * 查询全部用户信息
+     * @return
+     */
+    List<Developer> getAllDevelopers();
+
+    /**
+     * 删除所有用户信息
+     * @param projectUrl
+     */
+    void deleteDeveloper(String projectUrl);
+
+    /**
+     * 根据nation查询用户信息
+     * @param nation
+     * @return
+     */
+    List<Developer> findDevelopersByNation(String nation);
 }

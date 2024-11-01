@@ -7,13 +7,12 @@ import com.ljh.service.ProjectService;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * 员工管理
- */
+
 @RestController
 @RequestMapping("/project")
 @Slf4j
@@ -48,6 +47,16 @@ public class ProjectController {
     public Result<Project> selectUrl(String url) {
          Project project =  projectService.selectUrl(url);
         return  Result.success(project);
+    }
+
+    /**
+     * 删除指定项目信息
+     * @return
+     */
+    @DeleteMapping("/deleteRepoUrl")
+    public Result<String> deleteRepoUrl(String repoUrl) {
+        projectService.deleteRepoUrl(repoUrl);
+        return Result.success();
     }
 
 

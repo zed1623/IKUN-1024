@@ -19,4 +19,9 @@ public interface ProjectMapper {
     void updateProjectUser(@Param("projectUser") int totalContributors,@Param("repoUrl") String projectUrl1);
 
 
+    /**
+     * 删除指定项目信息
+     * @param repoUrl
+     */
+    void deleteRepoUrl(String repoUrl);
 }

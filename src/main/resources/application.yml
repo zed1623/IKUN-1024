@@ -16,3 +16,11 @@ mybatis:
   type-aliases-package: com.ljh.pojo.entity
   configuration:
     map-underscore-to-camel-case: true
+
+# 讯飞星火ai配置
+xunfei:
+  client:
+    hostUrl: https://spark-api.xf-yun.com/v3.1/chat
+    appid: fda7144c
+    apiSecret: ODlmNjZiZWIyNTg1MzEzZjEwMTU4MWMw
+    apiKey: f4fbf7d60421f7fa67ea8745a3666e46

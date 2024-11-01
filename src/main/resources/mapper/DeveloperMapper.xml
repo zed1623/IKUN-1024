@@ -9,6 +9,10 @@
         VALUES (#{login}, #{projectUrl});
     </insert>
 
+    <delete id="deleteDeveloper">
+        DELETE FROM developer WHERE project_url = #{projectUrl};
+    </delete>
+
     <select id="getTop10Developers" resultType="java.lang.String">
         SELECT login
         FROM developer
@@ -24,10 +28,15 @@
     </select>
 
     <select id="pageQuery" resultType="com.ljh.pojo.entity.Developer">
-        select * from developer
-        order by created_at desc
+        SELECT * FROM developer
+        ORDER BY  created_at DESC
     </select>
-
+    <select id="getAllDevelopers" resultType="com.ljh.pojo.entity.Developer">
+        SELECT * FROM developer;
+    </select>
+    <select id="findDevelopersByNation" resultType="com.ljh.pojo.entity.Developer">
+        SELECT * FROM developer WHERE nation = #{nation}
+    </select>
 
     <update id="updateDeveloperByLogin" parameterType="com.ljh.pojo.entity.Developer">
         UPDATE developer

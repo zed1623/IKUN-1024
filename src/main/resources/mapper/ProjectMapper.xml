@@ -12,7 +12,9 @@
         SET project_user = #{projectUser}
         WHERE repo_url = #{repoUrl}
     </update>
-
+    <delete id="deleteRepoUrl">
+        DELETE FROM project WHERE repo_url = #{repoUrl}
+    </delete>
 
 
     <select id="getProjectsForDeveloper" resultType="com.ljh.pojo.entity.Project">

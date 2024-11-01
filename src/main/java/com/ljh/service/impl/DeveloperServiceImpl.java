@@ -11,17 +11,24 @@ import com.ljh.pojo.entity.Project;
 import com.ljh.result.PageResult;
 import com.ljh.service.DeveloperService;
 import com.ljh.utils.BaiduTranslate;
+import com.sun.rowset.internal.Row;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +146,88 @@ public class DeveloperServiceImpl implements DeveloperService {
         //下一条sql进行分页，自动加入limit关键字分页
         Page<Developer> page = developerMapper.pageQuery(developerPageQueryDTO);
         return new PageResult(page.getTotal(), page.getResult());
+    }
+
+    /**
+     * 导出用户信息为excel表格
+     *
+     * @param response
+     */
+    @Override
+    public void exportDevelopersToExcel(HttpServletResponse response) {
+        try {
+            // 获取用户数据
+            List<Developer> developers = developerMapper.getAllDevelopers();
+
+            // 创建 Excel 工作簿和 Sheet
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.createSheet("Developers");
+
+            // 创建表头
+            String[] headers = {"开发者全名", "GitHub用户名", "电子邮箱", "项目url", "博客地址", "地区", "技术能力评价分数"};
+            XSSFFont font = workbook.createFont();
+            XSSFCellStyle headerStyle = workbook.createCellStyle();
+            font.setBold(true); // 设置字体加粗
+            XSSFRow headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                XSSFCell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                // 可选择添加单元格样式，例如加粗、居中等
+                cell.setCellStyle(headerStyle);
+            }
+
+            // 填充数据
+            int rowNum = 1;
+            for (Developer developer : developers) {
+                XSSFRow row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(developer.getLogin());
+                row.createCell(1).setCellValue(developer.getName());
+                row.createCell(2).setCellValue((developer.getEmail()));
+                row.createCell(3).setCellValue(developer.getProfileUrl());
+                row.createCell(4).setCellValue(developer.getBio());
+                row.createCell(5).setCellValue(developer.getNation());
+//                row.createCell(6).setCellValue(developer.getTalentRank());
+            }
+            // 设置 HTTP 响应
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=developers.xlsx");
+
+            // 输出流写入响应
+//            try (OutputStream outputStream = response.getOutputStream()) {
+//                workbook.write(outputStream);
+//            }
+           FileOutputStream out =   new FileOutputStream(new File("D:\\Developers.xlsx"));
+            workbook.write(out);
+            out.close();
+            workbook.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * 删除所有用户信息
+     * @param projectUrl
+     */
+    @Override
+    public void deleteDeveloper(String projectUrl) {
+        developerMapper.deleteDeveloper(projectUrl); // 执行删除所有用户信息的数据库操作
+    }
+
+    /**
+     * 根据nation查询用户信息
+     *
+     * @param nation
+     * @return
+     */
+    @Override
+    public List<Developer> getDevelopersByNation(String nation) {
+        if(nation.isEmpty()){
+            throw new BaseException("nation为空");
+        }
+        List<Developer> developerList = developerMapper.findDevelopersByNation(nation);
+        return developerList;
     }
 
     /**

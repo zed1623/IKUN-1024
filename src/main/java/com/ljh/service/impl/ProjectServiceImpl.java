@@ -129,6 +129,16 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     /**
+     * 删除指定项目信息
+     *
+     * @param repoUrl
+     */
+    @Override
+    public void deleteRepoUrl(String repoUrl) {
+        projectMapper.deleteRepoUrl(repoUrl);
+    }
+
+    /**
      * 获取项目的基本信息
      * @param owner
      * @param repo

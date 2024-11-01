@@ -18,4 +18,10 @@ public interface ProjectService {
      * @return
      */
     Project selectUrl(String url);
+
+    /**
+     * 删除指定项目信息
+     * @param repoUrl
+     */
+    void deleteRepoUrl(String repoUrl);
 }
