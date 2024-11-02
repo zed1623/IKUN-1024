@@ -107,6 +107,8 @@ public class DeveloperServiceImpl implements DeveloperService {
                         }
                     }
 
+                    String field = analyzeDeveloperField(developer.getName());
+                    developer.setField(field);
 
                     // 4. 更新数据库中的开发者信息
                     developerMapper.updateDeveloperByLogin(developer);
@@ -212,6 +214,9 @@ public class DeveloperServiceImpl implements DeveloperService {
      */
     @Override
     public void deleteDeveloper(String projectUrl) {
+        if(projectUrl.isEmpty()){
+            throw  new BaseException("projectUrl为空");
+        }
         developerMapper.deleteDeveloper(projectUrl); // 执行删除所有用户信息的数据库操作
     }
 
@@ -227,6 +232,19 @@ public class DeveloperServiceImpl implements DeveloperService {
             throw new BaseException("nation为空");
         }
         List<Developer> developerList = developerMapper.findDevelopersByNation(nation);
+        return developerList;
+    }
+
+    /**
+     * 根据领域搜索开发者并按 TalentRank 排序，可选使用 Nation 作为筛选条件
+     *
+     * @param field
+     * @param nation
+     * @return
+     */
+    @Override
+    public List<Developer> searchDevelopersByFieldAndNation(String field, String nation) {
+        List<Developer> developerList = developerMapper.findDevelopersByFieldAndNation(field, nation);
         return developerList;
     }
 
@@ -553,6 +571,139 @@ public class DeveloperServiceImpl implements DeveloperService {
     }
 
     /**
+     * 根据 GitHub 用户名分析开发者的技术领域
+     * @param username GitHub 用户名
+     * @return 推测的技术领域
+     */
+    public String analyzeDeveloperField(String username) {
+        try {
+            String reposUrl = String.format("https://api.github.com/users/%s/repos", username);
+            URL url = new URL(reposUrl);
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Authorization", "token " + token);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder content = new StringBuilder();
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine);
+                }
+                in.close();
+                connection.disconnect();
+
+                // 解析项目信息，分析主语言和项目描述
+                JSONArray repos = new JSONArray(content.toString());
+                Map<String, Integer> languageFrequency = new HashMap<>();
+                Map<String, Integer> fieldFrequency = new HashMap<>();
+
+                for (int i = 0; i < repos.length(); i++) {
+                    JSONObject repo = repos.getJSONObject(i);
+                    String language = repo.optString("language", "N/A");
+                    String description = repo.optString("description", "").toLowerCase();
+
+                    // 统计编程语言频率
+                    if (!language.equals("N/A")) {
+                        languageFrequency.put(language, languageFrequency.getOrDefault(language, 0) + 1);
+                    }
+
+                    // 基于项目描述推测领域
+                    String fieldFromDescription = guessFieldFromDescription(description);
+                    if (!fieldFromDescription.equals("未知领域")) {
+                        fieldFrequency.put(fieldFromDescription, fieldFrequency.getOrDefault(fieldFromDescription, 0) + 1);
+                    }
+                }
+
+                // 找出使用最多的语言
+                String dominantLanguage = languageFrequency.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .map(Map.Entry::getKey)
+                        .orElse("N/A");
+
+                // 根据编程语言推测技术领域
+                String fieldFromLanguage = guessFieldFromLanguage(dominantLanguage);
+
+                // 找出频率最高的领域
+                String mostCommonField = fieldFrequency.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .map(Map.Entry::getKey)
+                        .orElse("未知领域");
+
+                // 返回更准确的领域，优先级：项目描述 > 编程语言
+                return !mostCommonField.equals("未知领域") ? mostCommonField : fieldFromLanguage;
+
+            }
+        } catch (Exception e) {
+            throw new BaseException("分析开发者技术领域失败：" + e.getMessage());
+        }
+        return "未知领域";
+    }
+
+    /**
+     * 根据项目描述推测技术领域
+     * @param description 项目描述
+     * @return 技术领域
+     */
+    private String guessFieldFromDescription(String description) {
+        if (description.contains("web") || description.contains("frontend") || description.contains("website")) {
+            return "Web 开发";
+        } else if (description.contains("data") || description.contains("ml") || description.contains("ai")) {
+            return "数据科学/机器学习";
+        } else if (description.contains("app") || description.contains("android") || description.contains("ios")) {
+            return "移动应用开发";
+        } else if (description.contains("game") || description.contains("unity") || description.contains("unreal")) {
+            return "游戏开发";
+        } else if (description.contains("embedded") || description.contains("firmware") || description.contains("system")) {
+            return "系统开发/嵌入式开发";
+        }
+        return "未知领域";
+    }
+
+    /**
+     * 根据编程语言推测技术领域
+     * @param language 编程语言
+     * @return 技术领域
+     */
+    private String guessFieldFromLanguage(String language) {
+        switch (language.toLowerCase()) {
+            case "javascript":
+            case "html":
+            case "css":
+                return "Web 开发";
+            case "python":
+                return "数据科学/机器学习";
+            case "java":
+                return "企业级应用/Android 开发";
+            case "c#":
+                return "游戏开发/企业应用";
+            case "swift":
+                return "iOS 开发";
+            case "kotlin":
+                return "Android 开发";
+            case "r":
+                return "数据分析";
+            case "php":
+                return "Web 开发";
+            case "c++":
+            case "c":
+                return "系统开发/嵌入式开发";
+            case "ruby":
+                return "Web 开发";
+            case "go":
+                return "云计算/后端开发";
+            case "typescript":
+                return "前端/全栈开发";
+            default:
+                return "通用开发";
+        }
+    }
+
+
+
+    /**
      * 计算开发者的 TalentRank
      * @param username
      * @return
@@ -629,6 +780,4 @@ public class DeveloperServiceImpl implements DeveloperService {
 
         return contributions;
     }
-
-
 }

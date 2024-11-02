@@ -96,49 +96,17 @@ public class DeveloperController {
         return Result.success(developerList);
     }
 
-
-//    /**
-//     * 登录
-//     *
-//     * @param employeeLoginDTO
-//     * @return
-//     */
-//    @PostMapping("/login")
-//    public Result<EmployeeLoginVO> login(@RequestBody EmployeeLoginDTO employeeLoginDTO) {
-//        log.info("登录：{}", employeeLoginDTO);
-//
-//        Employee employee = employeeService.login(employeeLoginDTO);
-//
-//        //登录成功后，生成jwt令牌
-//        Map<String, Object> claims = new HashMap<>();
-//        claims.put(JwtClaimsConstant.EMP_ID, employee.getId());
-//        String token = JwtUtil.createJWT(
-//                jwtProperties.getAdminSecretKey(),
-//                jwtProperties.getAdminTtl(),
-//                claims);
-//
-//        EmployeeLoginVO employeeLoginVO = EmployeeLoginVO.builder()
-//                .id(employee.getId())
-//                .userName(employee.getUsername())
-//                .name(employee.getName())
-//                .token(token)
-//                .build();
-//
-//        return Result.success(employeeLoginVO);
-//    }
-//
-//    /**
-//     * 退出
-//     *
-//     * @return
-//     */
-//    @PostMapping("/logout")
-//    //@ApiOperation(value = "员工退出")
-//    public Result<String> logout() {
-//        return Result.success();
-//    }
-
-
-
-
+    /**
+     * 根据领域搜索开发者并按 TalentRank 排序，可选使用 Nation 作为筛选条件
+     * @param field 搜索的领域
+     * @param nation (可选)筛选的国家
+     * @return 开发者列表
+     */
+    @GetMapping("/search")
+    public Result<List<Developer>> searchDevelopersByField(
+            @RequestParam String field,
+            @RequestParam(required = false) String nation) {
+        List<Developer> developers = developerService.searchDevelopersByFieldAndNation(field, nation);
+        return Result.success(developers);
+    }
 }

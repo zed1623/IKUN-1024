@@ -38,6 +38,15 @@
         SELECT * FROM developer WHERE nation = #{nation}
     </select>
 
+    <select id="findDevelopersByFieldAndNation" resultType="com.ljh.pojo.entity.Developer">
+        SELECT * FROM developer
+        WHERE field = #{field}
+        <if test="nation != null and nation != ''">
+            AND nation = #{nation}
+        </if>
+        ORDER BY talent_rank DESC
+    </select>
+
     <update id="updateDeveloperByLogin" parameterType="com.ljh.pojo.entity.Developer">
         UPDATE developer
         <set>

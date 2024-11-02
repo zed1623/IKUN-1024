@@ -48,4 +48,12 @@ public interface DeveloperService {
      * @return
      */
     List<Developer> getDevelopersByNation(String nation);
+
+    /**
+     * 根据领域搜索开发者并按 TalentRank 排序，可选使用 Nation 作为筛选条件
+     * @param field
+     * @param nation
+     * @return
+     */
+    List<Developer> searchDevelopersByFieldAndNation(String field, String nation);
 }
