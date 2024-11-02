@@ -42,7 +42,8 @@ src
 **联系方式**
 
 - **作者**: 小殇
-- **Email**: [chainljh@gmail.com](mailto:chainljh@gmail.com)
+- **Email**: 2710581308@qq.com
 - **GitHub**: [xiaoshang-1](https://github.com/xiaoshang-1)
 
 如需帮助或更多信息，请随时联系作者。
+
