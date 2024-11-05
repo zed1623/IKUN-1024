@@ -19,10 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 @Api(tags = "仓库项目相关接口")
 public class ProjectController {
 
-
-    @Autowired
-    private JwtProperties jwtProperties;
-
     @Autowired
     private ProjectService projectService;
 
@@ -58,6 +54,4 @@ public class ProjectController {
         projectService.deleteRepoUrl(repoUrl);
         return Result.success();
     }
-
-
 }

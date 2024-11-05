@@ -41,6 +41,14 @@ public class ProjectServiceImpl implements ProjectService {
      */
     public void analyseUrl(String url) {
         try {
+            // 检查数据库中是否已有该项目记录，如果存在则删除
+            long existingProjectId = projectMapper.selectByUrl(url);
+            if (existingProjectId > 0) {
+                projectMapper.deleteRepoUrl(url);
+                developerMapper.deleteDeveloper(url);
+                System.out.println("已删除数据库中现有的项目记录。");
+            }
+
             // 分析 URL，提取出仓库拥有者和仓库名称
             String[] parts = url.split("/");
             if (parts.length < 5) {
@@ -67,7 +75,7 @@ public class ProjectServiceImpl implements ProjectService {
             int issues = projectInfo.getInt("open_issues_count");
             String repoUrl = projectInfo.getString("html_url");
 
-            // 获取关联的项目（例如Fork的项目）
+            // 获取关联的项目（例如 Fork 的项目）
             String[] linkedProjects = fetchLinkedProjects(owner, repo);
 
             // 创建 Project 对象并设置字段
@@ -107,12 +115,13 @@ public class ProjectServiceImpl implements ProjectService {
             System.out.println("项目信息已保存到数据库。");
 
             // 获取并输出贡献者信息
-            fetchAndSaveContributorsWithDelay(projectInfo.getString("contributors_url"),url);
+            fetchAndSaveContributorsWithDelay(projectInfo.getString("contributors_url"), url);
 
         } catch (Exception e) {
             throw new BaseException("查询指定 GitHub 项目的信息失败：" + e.getMessage());
         }
     }
+
 
     /**
      * 通过 URL 查询指定项目的信息。
