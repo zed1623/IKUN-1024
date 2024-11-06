@@ -33,7 +33,7 @@
     <el-card class="input-demo">
       <div class="input-section">
         <label for="repo-url">输入 GitHub 仓库地址:</label>
-        <input type="text" id="repo-url" placeholder="" />
+        <input v-model="repoUrl" type="text" id="repo-url" placeholder="" />
         <button @click="goToAnalysis">开始分析</button>
       </div>
     </el-card>
@@ -64,12 +64,15 @@
 
 
 <script setup>
+import { useRepoStore } from "@/stores/repoStore";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 
 // 路由实例
+const store = useRepoStore();
 const router = useRouter();
+const repoUrl = ref("");
 
 // FAQ 数据
 const faqs = ref([
@@ -86,9 +89,9 @@ const faqs = ref([
 
 // 跳转到分析页面的方法
 function goToAnalysis() {
-  const repoUrl = document.getElementById("repo-url").value;
-  if (repoUrl) {
-    router.push(`/analyse`);
+  if (repoUrl.value) {
+    store.setRepoUrl(repoUrl.value); // 将输入的仓库地址存入全局状态
+    router.push(`/overview`); // 跳转到分析页面
   } else {
     ElMessage.error("请输入有效的 GitHub 仓库地址！");
   }

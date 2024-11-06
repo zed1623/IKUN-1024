@@ -25,12 +25,12 @@
 
       <!-- <li>个人分析</li>
       <li>成员位置</li> -->
-      <el-input
+      <!-- <el-input
         v-model="input"
         style="width: 600px; margin-left: 20px"
         placeholder="请输入仓库地址"
         :prefix-icon="Search"
-      />
+      /> -->
       <!-- <li><router-link to="/contact">Contact</router-link></li> -->
     </div>
   </div>
@@ -42,7 +42,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-const input = ref("");
+// const input = ref("");
 const toHome = () => {
   console.log("jump");
 

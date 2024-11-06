@@ -1,7 +1,7 @@
 <template>
   <div class="homePage">
     <div class="projectInformation">
-      <ProjectOverview class="flexItem" />
+      <ProjectOverview class="flexItem" :data="result.data" />
       <!-- 项目概览区组件 -->
       <QuickStats class="flexItem" />
       <!-- 快速统计组件 -->
@@ -15,14 +15,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import ProjectOverview from "@/components/home/ProjectOverview.vue";
 import QuickStats from "@/components/home/QuickStats.vue";
 import ContributorCharts from "@/components/home/ContributorCharts.vue";
 import ContributorList from "@/components/home/ContributorList.vue";
 import { analyseUrl, showUrl } from "@/api/project/project";
+import { useRepoStore } from "@/stores/repoStore";
 
-const showResult = ref(null);
+const result = ref({});
+
+const store = useRepoStore();
+const repoUrl = computed(() => store.repoUrl);
 
 async function fetchAndShowUrl(data) {
   try {
@@ -39,17 +43,17 @@ async function fetchAndShowUrl(data) {
       // 调用 showUrl 请求
       const showResponse = await showUrl(data);
       console.log("showUrl response:", showResponse.data);
-      showResult.value = showResponse.data; // 将响应数据赋值
+      result.value = showResponse.data; // 将响应数据赋值
+      console.log("result:", result.value.data);
     }
   } catch (error) {
     console.error("Error fetching data:", error);
   }
 }
-
 // 在组件挂载时调用
 onMounted(() => {
   const requestData = {
-    url: "https://github.com/wdlhao/vue2-element-touzi-admin",
+    url: repoUrl.value,
   };
   fetchAndShowUrl(requestData);
 });
@@ -71,3 +75,4 @@ onMounted(() => {
   }
 }
 </style>
+
