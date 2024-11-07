@@ -3,7 +3,7 @@
     <!-- 项目基本信息区 -->
     <el-card class="project-info" shadow="hover">
       <h2>项目基本信息</h2>
-      <p>项目名称: Example Project</p>
+      <p>项目名称: {{ dataStore.projectData.name }}</p>
       <p>Stars: 1234</p>
       <p>Forks: 567</p>
       <p>Issues: 89</p>
@@ -53,11 +53,10 @@
 
 <script setup>
 import { ref } from "vue";
-
-// 定义响应式数据
-const message = ref("项目分析");
-
-// 在这里编写你的 Composition API 代码
+import { useDataStore } from "@/stores/dataStore";
+const dataStore = useDataStore();
+const data = ref({});
+data.value = dataStore.projectData;
 </script>
 
 <style scoped lang="scss">

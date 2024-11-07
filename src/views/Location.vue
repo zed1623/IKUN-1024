@@ -13,7 +13,7 @@
         </select>
       </div>
     </el-card>
-
+    <button @click="showAll">show</button>
     <!-- 地图展示区 -->
     <el-card class="map-display" shadow="hover">
       <div id="contributor-map">地图加载中...</div>
@@ -51,9 +51,12 @@
 <script setup>
 import { ref } from "vue";
 import { ElButton, ElCard } from "element-plus";
-
-// 定义响应式数据
-const message = ref("成员位置");
+import { useDataStore } from "@/stores/dataStore";
+const dataStore = useDataStore();
+const showAll = () => {
+  console.log("projectdata", dataStore.projectData);
+  console.log("listdata", dataStore.listData);
+};
 </script>
 
 <style scoped lang="scss">

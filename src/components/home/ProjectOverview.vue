@@ -6,41 +6,41 @@
         <div class="basic">
           <div class="show">
             <div class="name">项目名称：</div>
-            <div class="data">{{ data?.name }}</div>
+            <div class="data">{{ data?.data?.name }}</div>
           </div>
-          <div class="show">
+          <div class="show introduce">
             <div class="name">简介：</div>
-            <div class="data">{{ data?.description }}</div>
+            <div class="data">{{ data?.data?.description }}</div>
           </div>
           <div class="show">
             <div class="name">star：</div>
-            <div class="data">{{ data?.stars }}</div>
+            <div class="data">{{ data?.data?.stars }}</div>
           </div>
           <div class="show">
             <div class="name">forks：</div>
-            <div class="data">{{ data?.forks }}</div>
+            <div class="data">{{ data?.data?.forks }}</div>
           </div>
           <div class="show">
             <div class="name">issues：</div>
-            <div class="data">{{ data?.issues }}</div>
+            <div class="data">{{ data?.data?.issues }}</div>
           </div>
         </div>
         <div class="summary">
           <div class="show">
             <div class="name">开发者数量:</div>
-            <div class="data">{{ data?.projectUser }}</div>
+            <div class="data">{{ data?.data?.projectUser }}</div>
           </div>
           <div class="show">
             <div class="name">总提交次数：</div>
-            <div class="data">{{ data?.totalCommits }}</div>
+            <div class="data">{{ data?.data?.totalCommits }}</div>
           </div>
           <div class="show">
             <div class="name">总代码行数：</div>
-            <div class="data">{{ data?.projectCode }}</div>
+            <div class="data">{{ data?.data?.projectCode }}</div>
           </div>
           <div class="show">
             <div class="name">最近更新：</div>
-            <div class="data">{{ data?.updatedAt }}</div>
+            <div class="data">{{ data?.data?.updatedAt }}</div>
           </div>
         </div>
       </div></el-card
@@ -59,24 +59,24 @@ const props = defineProps({
 
 console.log("Initial props data:", props.data);
 
-watch(
-  () => props.data,
-  (newValue) => {
-    if (newValue && Object.keys(newValue).length > 0) {
-      // 检查 newValue 是否有效
-      console.log("data has been updated in child component:", newValue);
-      // 在这里处理 data 更新后的逻辑
-    }
-  },
-  { immediate: true, deep: true }
-);
+// watch(
+//   () => props.data,
+//   (newValue) => {
+//     if (newValue && Object.keys(newValue).length > 0) {
+//       // 检查 newValue 是否有效
+//       console.log("data has been updated in child component:", newValue);
+//       // 在这里处理 data 更新后的逻辑
+//     }
+//   },
+//   { immediate: true, deep: true }
+// );
 </script>
 
 <style scoped lang = "scss">
 .topic {
   text-align: center;
   font-size: 23px;
-  background-color: antiquewhite;
+  /* background-color: antiquewhite; */
 }
 .content {
   .basic,
@@ -117,6 +117,9 @@ watch(
   &::-webkit-scrollbar-track {
     background-color: #f1f1f1; /* 滚动条轨道的颜色 */
   }
+}
+.intrduce {
+  width: 720px;
 }
 ::v-deep .el-card {
   --el-card-padding: 8px;

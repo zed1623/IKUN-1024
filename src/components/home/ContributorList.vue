@@ -10,16 +10,26 @@
           style="width: 100%"
         >
           <el-table-column prop="name" label="用户名" width="180" />
+          <el-table-column prop="login" label="账号" width="180" />
           <el-table-column
-            prop="TalentRank"
+            prop="talentRank"
             label="TalentRank"
             sortable
             width="180"
           />
-          <el-table-column prop="name" label="提交次数" width="180" />
-          <el-table-column prop="name" label="代码提交量" width="180" />
-          <el-table-column prop="name" label="最近一次提交时间" width="180" />
-          <el-table-column prop="address" label="位置" />
+          <el-table-column prop="number" label="提交次数" width="180" />
+          <el-table-column
+            prop="totalAdditions"
+            label="代码提交量"
+            width="180"
+          />
+          <el-table-column
+            prop="updatedAt"
+            label="最近一次提交时间"
+            width="180"
+          />
+          <el-table-column prop="nation" label="地区" />
+          <el-table-column prop="nation" label="地区置信度" />
         </el-table>
       </div>
     </el-card>
@@ -27,30 +37,29 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { defineProps, ref, watch } from "vue";
 
-const tableData = [
-  {
-    TalentRank: "2016-05-03",
-    name: "Tom",
-    address: "No. 189, Grove St, Los Angeles",
+const props = defineProps({
+  data: {
+    type: [Object, Array],
+    required: true,
   },
-  {
-    TalentRank: "2016-05-02",
-    name: "Tom",
-    address: "No. 189, Grove St, Los Angeles",
+});
+
+const tableData = ref([]);
+
+// 监听 props.data 的变化并更新 tableData
+watch(
+  () => props.data,
+  (newValue) => {
+    if (newValue && newValue.length > 0) {
+      console.log("data has been updated in child component:", newValue);
+      // 在这里处理数据更新后的逻辑
+      tableData.value = newValue;
+    }
   },
-  {
-    TalentRank: "2016-05-04",
-    name: "Tom",
-    address: "No. 189, Grove St, Los Angeles",
-  },
-  {
-    TalentRank: "2016-05-01",
-    name: "Tom",
-    address: "No. 189, Grove St, Los Angeles",
-  },
-];
+  { immediate: true, deep: true }
+);
 </script>
 
 <style scoped lang = "scss">
@@ -62,7 +71,7 @@ const tableData = [
   .topic {
     text-align: center;
     font-size: 23px;
-    background-color: antiquewhite;
+    /* background-color: antiquewhite; */
   }
   ::v-deep .el-card {
     --el-card-padding: 8px;

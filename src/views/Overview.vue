@@ -1,62 +1,56 @@
 <template>
   <div class="homePage">
     <div class="projectInformation">
-      <ProjectOverview class="flexItem" :data="result.data" />
+      <ProjectOverview class="flexItem" :data="dataStore.projectData" />
       <!-- 项目概览区组件 -->
-      <QuickStats class="flexItem" />
+      <!-- <QuickStats class="flexItem" /> -->
       <!-- 快速统计组件 -->
+      <ContributorCharts class="flexItem" :data="computedData" />
     </div>
+    <div v-if="dataStore.loadingStates.analyseUrl">加载项目数据中...</div>
+    <div v-if="dataStore.loadingStates.getPerson">加载人员信息中...</div>
+    <div v-if="dataStore.loadingStates.getList">加载列表数据中...</div>
+    <button @click="showAll">show</button>
 
-    <ContributorCharts />
     <!-- 贡献者分析图表组件 -->
-    <ContributorList />
+    <ContributorList :data="computedData" />
     <!-- 贡献者列表组件 -->
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import ProjectOverview from "@/components/home/ProjectOverview.vue";
 import QuickStats from "@/components/home/QuickStats.vue";
 import ContributorCharts from "@/components/home/ContributorCharts.vue";
 import ContributorList from "@/components/home/ContributorList.vue";
-import { analyseUrl, showUrl } from "@/api/project/project";
+import { useDataStore } from "@/stores/dataStore";
 import { useRepoStore } from "@/stores/repoStore";
 
-const result = ref({});
-
+const dataStore = useDataStore();
 const store = useRepoStore();
 const repoUrl = computed(() => store.repoUrl);
-
-async function fetchAndShowUrl(data) {
-  try {
-    console.log("Starting analyseUrl request...");
-    // 调用 analyseUrl 请求
-    console.log("data", data);
-
-    const response = await analyseUrl(data);
-    console.log("analyseUrl response received:", response);
-
-    if (response.data.code === 200) {
-      console.log("analyseUrl succeeded with status 200");
-
-      // 调用 showUrl 请求
-      const showResponse = await showUrl(data);
-      console.log("showUrl response:", showResponse.data);
-      result.value = showResponse.data; // 将响应数据赋值
-      console.log("result:", result.value.data);
-    }
-  } catch (error) {
-    console.error("Error fetching data:", error);
-  }
-}
-// 在组件挂载时调用
+const requestData = { url: repoUrl.value };
 onMounted(() => {
-  const requestData = {
-    url: repoUrl.value,
-  };
-  fetchAndShowUrl(requestData);
+  dataStore.fetchAllData(requestData);
 });
+const computedData = computed(() => {
+  const data = dataStore.listData?.data;
+  // 返回一个新的数组引用
+  return data ? [...data] : data;
+});
+watch(
+  computedData,
+  (newData, oldData) => {
+    console.log("computedData updated:", newData);
+  },
+  { deep: true } // 深度监听，以便监听嵌套属性的变化
+);
+
+const showAll = () => {
+  console.log("projectdata", dataStore.projectData);
+  console.log("listdata", dataStore.listData);
+};
 </script>
 
 <style scoped lang = "scss">
@@ -70,7 +64,7 @@ onMounted(() => {
 
     .flexItem {
       flex: 1;
-      height: 400px;
+      height: 480px;
     }
   }
 }
