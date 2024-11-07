@@ -38,7 +38,7 @@ public class DeveloperController {
     @GetMapping("/getDeveloper")
     public Result<String> getDeveloper() {
         developerService.getDeveloper();
-        return Result.success();
+        return Result.success("用户信息分析完成");
     };
 
     /**
@@ -50,6 +50,18 @@ public class DeveloperController {
     public Result<Developer> getLoginDeveloper(String login) {
         Developer developer =  developerService.getLoginDeveloper(login);
         return Result.success(developer);
+    };
+
+
+    /**
+     * 根据项目地址查询用户信息
+     * @param url
+     * @return
+     */
+    @PostMapping("/getUrlDeveloper")
+    public Result<List<Developer>> getUrlDeveloper(String url) {
+        List<Developer> developerList =  developerService.getUrlDeveloper(url);
+        return Result.success(developerList);
     };
 
     /**

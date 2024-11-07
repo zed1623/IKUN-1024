@@ -1,6 +1,8 @@
 package com.ljh.controller;
 
 import com.ljh.config.SparkManager;
+import com.ljh.mapper.ProjectMapper;
+import com.ljh.pojo.entity.Project;
 import com.ljh.result.Result;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
@@ -20,17 +22,25 @@ public class XingHuoController {
 
     @Autowired
     private SparkManager sparkManager;
+
+    @Autowired
+    private ProjectMapper projectMapper;
+
+
+
     /**
      * 讯飞星火ai对话
      *
      * @param
-     * @param question
+     * @param
      * @return
      */
     @PostMapping("/aiChat")
-    public Result<String> aiChart(String question, HttpServletRequest request) {
+    public Result<String> aiChart() {
+        Project project = projectMapper.getMaxIdProject();
+        String projectAsString = project.toString();
         // 调用 AI 服务
-        String sendMesToAIUseXingHuo = sparkManager.sendMesToAIUseXingHuo(question);
+        String sendMesToAIUseXingHuo = sparkManager.sendMesToAIUseXingHuo(projectAsString);
         return Result.success(sendMesToAIUseXingHuo);
     }
 }

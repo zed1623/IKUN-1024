@@ -11,6 +11,12 @@ spring:
       username: gittalentdb
       password: 123456
 
+  redis:
+    host: 47.113.195.131
+    port: 6379
+    password: 123456
+    database: 2
+
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.ljh.pojo.entity

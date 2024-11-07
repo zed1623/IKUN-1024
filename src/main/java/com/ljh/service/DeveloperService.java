@@ -56,4 +56,11 @@ public interface DeveloperService {
      * @return
      */
     List<Developer> searchDevelopersByFieldAndNation(String field, String nation);
+
+    /**
+     * 根据项目地址查询用户信息
+     * @param login
+     * @return
+     */
+    List<Developer> getUrlDeveloper(String login);
 }

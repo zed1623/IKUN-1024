@@ -28,10 +28,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Service
 public class DeveloperServiceImpl implements DeveloperService {
@@ -40,6 +40,8 @@ public class DeveloperServiceImpl implements DeveloperService {
     private static final String GITHUB_EVENTS_API_URL = "https://api.github.com/users/%s/events/public";
     private static final String GITHUB_REPOS_API_URL = "https://api.github.com/repos/%s/%s/stats/contributors";
     private static final String token = "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";
+    private static final String GITHUB_API_URL = "https://api.github.com/repos/";
+    private static final String GITHUB_CONTRIBUTORS_API_URL = "https://api.github.com/repos/";
 
 
     private static final String GEO_NAMES_USERNAME = "xiaoshang";
@@ -53,72 +55,95 @@ public class DeveloperServiceImpl implements DeveloperService {
     @Autowired
     private ProjectMapper projectMapper; // 项目 Mapper
 
-    /**
-     * 通过github API 查询项目贡献者的信息
-     *
-     */
     @Override
     public void getDeveloper() {
+        // 获取最新的前10个开发者
         List<String> developers = developerMapper.getTop10Developers();
 
+        // 使用 ExecutorService 来处理并发请求
+        ExecutorService executorService = Executors.newFixedThreadPool(10); // 根据需要调整线程池大小
+        List<Future<?>> futures = new ArrayList<>();
+
+        // 获取项目信息（同一个项目的多个开发者，只需获取一次）
+        String login = developers.get(0);
+        Developer developer1 = developerMapper.seletProjectUrl(login);
+        String repoUrl = developer1.getProjectUrl();
+        Project project = projectMapper.getProjectsForDeveloper(repoUrl);
+        String owner = project.getOwnerLogin();
+        String repo = project.getName();
+
         for (String username : developers) {
-            try {
-                // 1. 获取 GitHub 用户信息
-                String githubApiUrl = GITHUB_USER_API_URL + username;
-                Map<String, Object> map = analyzeContributorActivity(username);
-                JSONObject userInfo = getGitHubUserInfo(githubApiUrl);
-                if (userInfo != null) {
-                    Developer developer = new Developer();
-                    developer.setLogin(userInfo.optString("login", "N/A"));
-                    developer.setName(userInfo.optString("name", "N/A"));
-                    developer.setEmail(userInfo.optString("email", "N/A"));
-                    developer.setAvatarUrl(userInfo.optString("avatar_url", "N/A"));
-                    developer.setBlogUrl(userInfo.optString("blog", "N/A"));
-                    developer.setProfileUrl(userInfo.optString("html_url", "N/A"));
-                    developer.setBio(userInfo.optString("bio", "N/A"));
+            futures.add(executorService.submit(() -> {
+                try {
+                    // 1. 获取 GitHub 用户信息
+                    String githubApiUrl = GITHUB_USER_API_URL + username;
+                    JSONObject userInfo = getGitHubUserInfo(githubApiUrl);
 
-                    // 计算 TalentRank
-                    float talentRank = calculateTalentRank(username);
-                    developer.setTalentRank(talentRank);
-                    // 2. 获取并设置国家信息
-                    String location = userInfo.optString("location", "N/A");
-                    String nation = guessNationFromLocation(location);
-                    developer.setNation(nation);
-                    developer.setNationConfidence(!nation.equals("N/A") ? 0.9f : 0.0f);
+                    if (userInfo != null) {
+                        Developer developer = new Developer();
+                        developer.setLogin(userInfo.optString("login", "N/A"));
+                        developer.setName(userInfo.optString("name", "N/A"));
+                        developer.setEmail(userInfo.optString("email", "N/A"));
+                        developer.setAvatarUrl(userInfo.optString("avatar_url", "N/A"));
+                        developer.setBlogUrl(userInfo.optString("blog", "N/A"));
+                        developer.setProfileUrl(userInfo.optString("html_url", "N/A"));
+                        developer.setBio(userInfo.optString("bio", "N/A"));
 
-                    // 3. 设置其他字段
-                    developer.setCreatedAt(userInfo.optString("created_at"));
-                    developer.setUpdatedAt(userInfo.optString("updated_at"));
+                        // 设置 TalentRank
+                        developer.setTalentRank(calculateTalentRank(username));
 
+                        // 设置国家信息并缓存结果
+                        String location = userInfo.optString("location", "N/A");
+                        String nation = guessNationFromLocation(location);
+                        developer.setNation(nation);
+                        developer.setNationConfidence(!nation.equals("N/A") ? 0.9f : 0.0f);
 
-                    // 如果 nation 是 "N/A"，通过时区推断大洲并更新 nation 字段
-                    if (nation.equals("N/A")) {
-                        String timezone = getUserTimezoneFromEvents(developer.getName());
-                        String continent = guessContinentFromTimezone(timezone);  // 根据时区推断大洲
-                        String s = guessNationFromLanguages(developer.getName());
-                        if (!continent.equals("Unknown Timezone")) {
-                            developer.setNation(continent);  // 用推测的大洲替换 N/A
-                            developer.setNationConfidence(0.3f);  // 设定较低的置信度
+                        developer.setCreatedAt(userInfo.optString("created_at"));
+                        developer.setUpdatedAt(userInfo.optString("updated_at"));
+
+                        // 获取代码统计信息
+                        int[] codeStats = getCodeStatsForUser(owner, repo, username);
+                        developer.setTotalAdditions(codeStats[0]);
+                        developer.setTotalDeletions(codeStats[1]);
+
+                        // 设置提交次数信息
+                        Developer info = getGitHubContributorsInfo(owner, repo, username);
+                        developer.setNumber(info.getNumber());
+
+                        // 更新国家信息
+                        if (nation.equals("N/A")) {
+                            String timezone = getUserTimezoneFromEvents(developer.getName());
+                            String continent = guessContinentFromTimezone(timezone);
+                            if (!continent.equals("Unknown Timezone")) {
+                                developer.setNation(continent);
+                                developer.setNationConfidence(0.3f);
+                            }
                         }
 
-                        if(!s.equals("N/A")) {
-                            developer.setNation(s);
-                            developer.setNationConfidence(0.3f);
-                        }
+                        // 获取开发者领域信息
+                        developer.setField(analyzeDeveloperField(developer.getName()));
+
+                        // 批量更新数据库
+                        developerMapper.updateDeveloperByLogin(developer);
                     }
 
-                    String field = analyzeDeveloperField(developer.getName());
-                    developer.setField(field);
-
-                    // 4. 更新数据库中的开发者信息
-                    developerMapper.updateDeveloperByLogin(developer);
-
+                } catch (Exception e) {
+                    System.out.println("Error processing developer " + username + ": " + e.getMessage());
                 }
-
-            } catch (Exception e) {
-                throw new BaseException("通过github API 查询项目贡献者的信息：" + e.getMessage());
-            }
+            }));
         }
+
+        // 等待所有任务完成
+        futures.forEach(future -> {
+            try {
+                future.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        // 关闭线程池
+        executorService.shutdown();
     }
 
     /**
@@ -249,6 +274,18 @@ public class DeveloperServiceImpl implements DeveloperService {
     }
 
     /**
+     * 根据项目地址查询用户信息
+     *
+     * @param projectUrl
+     * @return
+     */
+    @Override
+    public List<Developer> getUrlDeveloper(String projectUrl) {
+        List<Developer> developerList = developerMapper.selectUrlDeveloper(projectUrl);
+        return developerList;
+    }
+
+    /**
      * 根据 GitHub API 获取用户信息
      * @param urlString
      * @return
@@ -316,7 +353,7 @@ public class DeveloperServiceImpl implements DeveloperService {
                 for (int i = 0; i < events.length(); i++) {
                     JSONObject event = events.getJSONObject(i);
                     String type = event.getString("type");
-                    System.out.println("Event type: " + type);
+//                    System.out.println("Event type: " + type);
 
                     if (type.equals("PushEvent")) {
                         commitEvents++;
@@ -780,4 +817,143 @@ public class DeveloperServiceImpl implements DeveloperService {
 
         return contributions;
     }
+
+    /**
+     * 获取指定用户对指定项目的代码总量
+     * @param owner
+     * @param repo
+     * @param username
+     * @return
+     */
+    public int[] getCodeStatsForUser(String owner, String repo, String username) {
+        int totalAdditions = 0;
+        int totalDeletions = 0;
+        try {
+            String commitsUrl = GITHUB_API_URL + owner + "/" + repo + "/commits?author=" + username;
+            URL url = new URL(commitsUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            connection.setRequestProperty("Authorization", "token " + token);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder content = new StringBuilder();
+                String inputLine;
+
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine);
+                }
+                in.close();
+
+                JSONArray commits = new JSONArray(content.toString());
+
+                for (int i = 0; i < commits.length(); i++) {
+                    String sha = commits.getJSONObject(i).getString("sha");
+                    String commitDetailsUrl = GITHUB_API_URL + owner + "/" + repo + "/commits/" + sha;
+
+                    URL detailsUrl = new URL(commitDetailsUrl);
+                    HttpURLConnection detailsConnection = (HttpURLConnection) detailsUrl.openConnection();
+                    detailsConnection.setRequestMethod("GET");
+                    detailsConnection.setRequestProperty("Accept", "application/vnd.github.v3+json");
+                    detailsConnection.setRequestProperty("Authorization", "token " + token);
+
+                    if (detailsConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                        BufferedReader detailsIn = new BufferedReader(new InputStreamReader(detailsConnection.getInputStream()));
+                        StringBuilder detailsContent = new StringBuilder();
+                        String detailsLine;
+
+                        while ((detailsLine = detailsIn.readLine()) != null) {
+                            detailsContent.append(detailsLine);
+                        }
+                        detailsIn.close();
+
+                        JSONObject commitDetails = new JSONObject(detailsContent.toString());
+                        if (commitDetails.has("stats")) {
+                            JSONObject stats = commitDetails.getJSONObject("stats");
+                            totalAdditions += stats.getInt("additions");
+                            totalDeletions += stats.getInt("deletions");
+                        }
+                    }
+                    detailsConnection.disconnect();
+                }
+            } else {
+                System.out.println("Failed to get commit records. HTTP Response Code: " + responseCode);
+            }
+
+            connection.disconnect();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new int[]{totalAdditions, totalDeletions};
+    }
+
+
+
+    /**
+     * 获取指定用户对该项目的贡献次数
+     * @param owner 项目所有者
+     * @param repo 项目名称
+     * @param username 指定用户的用户名
+     * @return 指定用户的贡献信息
+     */
+    public Developer getGitHubContributorsInfo(String owner, String repo, String username) {
+        Developer userContribution = new Developer();
+        try {
+            String urlString = GITHUB_CONTRIBUTORS_API_URL + owner + "/" + repo + "/contributors";
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            connection.setRequestProperty("Authorization", "token " + token);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String inputLine;
+                StringBuilder content = new StringBuilder();
+
+                while ((inputLine = in.readLine()) != null) {
+                    content.append(inputLine);
+                }
+
+                in.close();
+
+                JSONArray contributorsArray = new JSONArray(content.toString());
+                for (int i = 0; i < contributorsArray.length(); i++) {
+                    JSONObject contributor = contributorsArray.getJSONObject(i);
+                    if (contributor.getString("login").equals(username)) {
+                        System.out.println("用户名: " + contributor.getString("login"));
+                        System.out.println("用户 ID: " + contributor.getInt("id"));
+                        System.out.println("贡献次数: " + contributor.getInt("contributions"));
+                        System.out.println("GitHub 主页: " + contributor.getString("html_url"));
+                        System.out.println("头像链接: " + contributor.getString("avatar_url"));
+                        System.out.println("-----------------------------");
+
+                        // 将指定用户的信息添加到返回的 Developer 对象中
+                        userContribution.setLogin(contributor.getString("login"));
+                        userContribution.setId(contributor.getInt("id"));
+                        userContribution.setNumber(contributor.getInt("contributions"));
+                        userContribution.setProfileUrl(contributor.getString("html_url"));
+                        userContribution.setAvatarUrl(contributor.getString("avatar_url"));
+                        break;
+                    }
+                }
+            } else {
+                System.out.println("Failed to get contributors info. HTTP Response Code: " + responseCode);
+            }
+
+            connection.disconnect();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return userContribution;
+    }
+
+
 }

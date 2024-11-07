@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * 贡献实体类，存储开发者对项目的贡献，包括提交次数、代码行数变动等。
  */
@@ -12,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Contribution {
+public class Contribution implements Serializable {
 
     /**
      * 对应的开发者 ID

@@ -24,4 +24,9 @@
         SELECT id FROM project WHERE repo_url = #{repoUrl}
     </select>
 
+    <select id="getMaxIdProject" resultType="com.ljh.pojo.entity.Project">
+        SELECT * FROM project
+        WHERE id = (SELECT MAX(id) FROM project)
+    </select>
+
 </mapper>

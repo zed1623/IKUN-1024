@@ -28,7 +28,7 @@ public interface DeveloperMapper {
 
     void updateDeveloperByLogin(Developer developer);
 
-    void updateDeveloperInfo(String login, String name, String email, String blogUrl, String profileUrl, String bio, String createdAt, String updatedAt);
+    void updateDeveloperInfo(String login, String name, String email, String blogUrl, String profileUrl, String bio, String createdAt, String updatedAt,int number,long totalAdditions,long totalDeletions);
 
     /**
      * 根据用户名查找用户信息
@@ -76,4 +76,18 @@ public interface DeveloperMapper {
      * @return
      */
     List<Developer> findDevelopersByFieldAndNation(@Param("field") String field, @Param("nation") String nation);
+
+    /**
+     *
+     * @param projectUrl
+     * @return
+     */
+    List<Developer> selectUrlDeveloper(String projectUrl);
+
+    /**
+     *
+     * @param login
+     * @return
+     */
+    Developer seletProjectUrl(String login);
 }

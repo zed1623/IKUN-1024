@@ -12,14 +12,19 @@ import com.ljh.utils.ProjectImportanceCalculatorUtil;
 import com.ljh.utils.SimpleProjectScorer;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +33,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     private static final String GITHUB_API_URL = "https://api.github.com/repos/";
     private static final String token = "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";
+    private static final Logger log = LoggerFactory.getLogger(ProjectServiceImpl.class);
 
     @Autowired
     private ProjectMapper projectMapper;
@@ -35,28 +41,48 @@ public class ProjectServiceImpl implements ProjectService {
     @Autowired
     private DeveloperMapper developerMapper;
 
+    @Autowired
+    private RedisTemplate<String, Integer> redisTemplate;
+
+    // 限流设置：每个 URL 10 秒内只允许访问一次
+    private static final String RATE_LIMIT_PREFIX = "rate_limit:";
+    private static final int RATE_LIMIT_THRESHOLD = 1; // 每个 URL 允许访问的次数
+    private static final Duration RATE_LIMIT_WINDOW = Duration.ofSeconds(60); // 时间窗口
     /**
      * 查询指定 GitHub 项目的信息
      * @param url
      */
     public void analyseUrl(String url) {
+        // 限流检查
+        String rateLimitKey = RATE_LIMIT_PREFIX + url;
+        Integer currentCount = redisTemplate.opsForValue().get(rateLimitKey);
+
+        if (currentCount != null && currentCount >= RATE_LIMIT_THRESHOLD) {
+            System.out.println("请求被限流，请稍后再试。");
+            log.info("请求被限流，请稍后再试。");
+            return;// 直接返回，阻止执行
+        }
+
+        // 增加访问计数器并设置过期时间
+        redisTemplate.opsForValue().increment(rateLimitKey, 1);
+        redisTemplate.expire(rateLimitKey, RATE_LIMIT_WINDOW);
+
         try {
             // 检查数据库中是否已有该项目记录，如果存在则删除
-            long existingProjectId = projectMapper.selectByUrl(url);
-            if (existingProjectId > 0) {
+            Long nullableProjectId = projectMapper.selectByUrl(url);
+            if (nullableProjectId != null) {
                 projectMapper.deleteRepoUrl(url);
                 developerMapper.deleteDeveloper(url);
-                System.out.println("已删除数据库中现有的项目记录。");
+                System.out.println("相关信息删除成功：" + nullableProjectId);
             }
 
-            // 分析 URL，提取出仓库拥有者和仓库名称
+            // 分析 URL，提取仓库拥有者和仓库名称
             String[] parts = url.split("/");
             if (parts.length < 5) {
                 System.out.println("Invalid GitHub repository URL.");
                 return;
             }
 
-            // 仓库拥有者和仓库名称
             String owner = parts[3];
             String repo = parts[4];
 
@@ -74,11 +100,17 @@ public class ProjectServiceImpl implements ProjectService {
             int forks = projectInfo.getInt("forks_count");
             int issues = projectInfo.getInt("open_issues_count");
             String repoUrl = projectInfo.getString("html_url");
+            String createdAt = projectInfo.getString("created_at");
+            String updatedAt = projectInfo.getString("updated_at");
 
             // 获取关联的项目（例如 Fork 的项目）
             String[] linkedProjects = fetchLinkedProjects(owner, repo);
 
-            // 创建 Project 对象并设置字段
+            // 时间字符串格式，假设时间字符串遵循 ISO 8601 格式
+            DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+            LocalDateTime createdAtDateTime = LocalDateTime.parse(createdAt, formatter);
+            LocalDateTime updatedAtDateTime = LocalDateTime.parse(updatedAt, formatter);
+
             Project project = new Project();
             project.setName(name);
             project.setDescription(description);
@@ -87,30 +119,20 @@ public class ProjectServiceImpl implements ProjectService {
             project.setStars(stars);
             project.setForks(forks);
             project.setIssues(issues);
-            project.setCreatedAt(LocalDateTime.now());
-            project.setUpdatedAt(LocalDateTime.now());
+            project.setCreatedAt(createdAtDateTime);
+            project.setUpdatedAt(updatedAtDateTime);
             project.setLinkedProjects(linkedProjects);
-
-            // 准备 Map 来传入给 calculateImportanceScores
-            Map<String, Project> projects = new HashMap<>();
-            projects.put(project.getName(), project);  // 将当前项目添加到 Map 中
 
             // 计算项目的重要性评分
             float scores = (float) SimpleProjectScorer.calculateScore(stars, forks);
-
             int totalCommits = getTotalCommits(owner, repo);
             int projectCode = getTotalLinesOfCode(owner, repo);
-            System.out.println("total commits: " + totalCommits);
-            System.out.println("projectCode: " + projectCode);
 
             project.setTotalCommits(totalCommits);
             project.setProjectCode(projectCode);
-
-            // 获取当前项目的评分
             project.setImportanceScore(scores);
-            System.out.println("项目重要性评分已计算：" + scores);
 
-            // 插入数据库
+            System.out.println("项目重要性评分已计算：" + scores);
             projectMapper.insertProject(project);
             System.out.println("项目信息已保存到数据库。");
 

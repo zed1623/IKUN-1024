@@ -14,7 +14,7 @@ public interface ProjectMapper {
 
     Project getProjectsForDeveloper(String url);
 
-    long selectByUrl(String repoUrl);
+    Long selectByUrl(String repoUrl);
 
     void updateProjectUser(@Param("projectUser") int totalContributors,@Param("repoUrl") String projectUrl1);
 
@@ -24,4 +24,11 @@ public interface ProjectMapper {
      * @param repoUrl
      */
     void deleteRepoUrl(String repoUrl);
+
+    /**
+     * 获取表中 id 最大的项目
+     * @return id 最大的项目数据
+     */
+    Project getMaxIdProject();
+
 }

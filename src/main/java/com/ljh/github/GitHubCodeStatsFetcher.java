@@ -14,6 +14,7 @@ import java.net.URL;
 public class GitHubCodeStatsFetcher {
 
     private static final String GITHUB_API_URL = "https://api.github.com/repos/";
+    private static final String token = "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";
 
     public static void main(String[] args) {
         String owner = "xtekky";  // 仓库拥有者
@@ -30,6 +31,7 @@ public class GitHubCodeStatsFetcher {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            connection.setRequestProperty("Authorization", "token " + token);
 
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {

@@ -1,11 +1,13 @@
 package com.ljh.config;
 
+import com.ljh.mapper.ProjectMapper;
 import io.github.briqt.spark4j.SparkClient;
 import io.github.briqt.spark4j.constant.SparkApiVersion;
 import io.github.briqt.spark4j.model.SparkMessage;
 import io.github.briqt.spark4j.model.SparkSyncChatResponse;
 import io.github.briqt.spark4j.model.request.SparkRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -17,6 +19,9 @@ import java.util.List;
 public class SparkManager {
     @Resource
     private SparkClient sparkClient;
+
+    @Autowired
+    private ProjectMapper projectMapper;
 
 
     /**

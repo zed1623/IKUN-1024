@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * 领域实体类，存储技术领域的信息，开发者可以根据技术领域分类。
  */
@@ -12,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Field {
+public class Field implements Serializable {
 
     /**
      * 技术领域唯一标识

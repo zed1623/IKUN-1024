@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Developer {
+public class Developer implements Serializable {
 
     /**
      * 开发者唯一标识
@@ -26,6 +27,12 @@ public class Developer {
      * */
     private String projectUrl;
 
+    /**
+     * 活动时区
+     */
+    private String hourFrequency;
+
+    private String code;
     /**
      * GitHub 用户名
      * */
@@ -41,6 +48,19 @@ public class Developer {
      * */
     private String email;
 
+    /**
+     * 提交代码次数
+     */
+    private int number;
+
+    /**
+     * 添加代码量
+     */
+    private long totalAdditions;
+    /**
+     * 删除代码量
+     */
+    private long totalDeletions;
     /**
      * 开发者头像
      * */

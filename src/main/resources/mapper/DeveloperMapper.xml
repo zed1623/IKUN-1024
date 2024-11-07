@@ -46,6 +46,12 @@
         </if>
         ORDER BY talent_rank DESC
     </select>
+    <select id="selectUrlDeveloper" resultType="com.ljh.pojo.entity.Developer">
+        SELECT * FROM developer WHERE project_url = #{profileUrl}
+    </select>
+    <select id="seletProjectUrl" resultType="com.ljh.pojo.entity.Developer">
+        SELECT  * FROM developer WHERE login = #{login}
+    </select>
 
     <update id="updateDeveloperByLogin" parameterType="com.ljh.pojo.entity.Developer">
         UPDATE developer
@@ -62,6 +68,15 @@
             <if test="talentRank != null">talent_rank = #{talentRank},</if>
             <if test="createdAt != null">created_at = #{createdAt},</if>
             <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="number != null">
+                `number` = #{number},
+            </if>
+            <if test="totalAdditions != null">
+                total_additions = #{totalAdditions},
+            </if>
+            <if test="totalDeletions != null">
+                total_deletions= #{totalDeletions},
+            </if>
         </set>
         WHERE login = #{login}
     </update>
@@ -90,6 +105,15 @@
             </if>
             <if test="updatedAt != null">
                 updatedAt = #{updated_at},
+            </if>
+            <if test="number != null">
+                `number` = #{number},
+            </if>
+            <if test="totalAdditions != null">
+                total_additions = #{totalAdditions},
+            </if>
+            <if test="totalDeletions != null">
+                total_deletions= #{totalDeletions},
             </if>
         </set>
         WHERE login = #{login}  <!-- 这里假设 login 是唯一标识 -->

@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 /**
  * 关系实体类，存储开发者之间的协作关系，通过这些关系可以推测国家、领域等信息。
  */
@@ -12,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Relation {
+public class Relation implements Serializable {
 
     /**
      * 开发者 ID
