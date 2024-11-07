@@ -7,10 +7,6 @@
       <!-- 快速统计组件 -->
       <ContributorCharts class="flexItem" :data="computedData" />
     </div>
-    <div v-if="dataStore.loadingStates.analyseUrl">加载项目数据中...</div>
-    <div v-if="dataStore.loadingStates.getPerson">加载人员信息中...</div>
-    <div v-if="dataStore.loadingStates.getList">加载列表数据中...</div>
-    <button @click="showAll">show</button>
 
     <!-- 贡献者分析图表组件 -->
     <ContributorList :data="computedData" />

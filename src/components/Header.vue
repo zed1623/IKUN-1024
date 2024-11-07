@@ -18,10 +18,10 @@
         <div class="pointer">个人信息</div></router-link
       >
 
-      <router-link to="/location">
+      <!-- <router-link to="/location">
         <div class="pointer">成员位置</div></router-link
       >
-      <router-link to="/chat"> <div class="pointer">AI分析</div></router-link>
+      <router-link to="/chat"> <div class="pointer">AI分析</div></router-link> -->
 
       <!-- <li>个人分析</li>
       <li>成员位置</li> -->

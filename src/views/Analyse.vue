@@ -3,43 +3,44 @@
     <!-- 项目基本信息区 -->
     <el-card class="project-info" shadow="hover">
       <h2>项目基本信息</h2>
-      <p>项目名称: {{ dataStore.projectData.name }}</p>
-      <p>Stars: 1234</p>
-      <p>Forks: 567</p>
-      <p>Issues: 89</p>
+      <p>项目名称: {{ data?.name }}</p>
+      <p>项目创建者: {{ data?.ownerLogin }}</p>
+      <p>Stars: {{ data?.stars }}</p>
+      <p>Forks: {{ data?.forks }}</p>
+      <p>Issues: {{ data?.issues }}</p>
+      <p>项目介绍: {{ data?.description }}</p>
     </el-card>
-
+    <!-- <button @click="show">1</button> -->
     <!-- 统计指标概览区 -->
     <el-card class="overview-stats" shadow="hover">
       <h2>统计指标概览</h2>
       <div class="flex">
-        <div class="stat-card">总贡献者数: 50</div>
-        <div class="stat-card">总提交次数: 200</div>
-        <div class="stat-card">代码总变更行数: 1500</div>
-        <div class="stat-card">月均提交量: 20</div>
+        <div class="stat-card">总贡献者数: {{ data?.projectUser }}</div>
+        <div class="stat-card">总提交次数: {{ data?.totalCommits }}</div>
+        <div class="stat-card">代码总行数: {{ data?.projectCode }}</div>
+        <div class="stat-card">项目创建时间: {{ data?.createdAt }}</div>
       </div>
     </el-card>
 
     <!-- 贡献者活跃度分析 -->
     <el-card class="contributor-activity" shadow="hover">
-      <h2>贡献者活跃度分析</h2>
-      <p>图表：每月新增贡献者数 & 提交频率</p>
+      <h2>ai分析结果</h2>
+      <p>{{ formattedResult }}</p>
     </el-card>
 
-    <!-- 代码变更统计 -->
-    <el-card class="code-changes" shadow="hover">
+    <!-- <el-card class="code-changes" shadow="hover">
       <h2>代码变更统计</h2>
       <p>图表：代码行数变化（增减行数）</p>
       <p>主要变更文件</p>
     </el-card>
 
-    <!-- 代码质量分析 -->
+
     <el-card class="code-quality" shadow="hover">
       <h2>代码质量分析</h2>
       <p>图表：Issue 处理情况 & Pull Request 合并情况</p>
     </el-card>
 
-    <!-- 交互功能 -->
+
     <el-card class="interactive-tools" shadow="hover">
       <div class="button-group">
         <el-button>时间筛选</el-button>
@@ -47,16 +48,33 @@
         <el-button>导出数据</el-button>
         <el-button>切换图表</el-button>
       </div>
-    </el-card>
+    </el-card> -->
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, watchEffect, onMounted, computed } from "vue";
 import { useDataStore } from "@/stores/dataStore";
+import { aiUrl } from "@/api/ai/ai";
 const dataStore = useDataStore();
 const data = ref({});
-data.value = dataStore.projectData;
+
+watchEffect(() => {
+  data.value = dataStore.projectData.data;
+});
+
+let result = ref("");
+
+const show = () => {
+  console.log("projectData999", result.value); // 使用 result.value
+};
+
+onMounted(async () => {
+  result.value = await aiUrl(); // 等待异步请求完成后再赋值
+});
+const formattedResult = computed(() =>
+  result.value?.data?.data.replace(/^【+|】+$/g, "")
+);
 </script>
 
 <style scoped lang="scss">

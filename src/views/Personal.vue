@@ -7,85 +7,211 @@
       :class="{ selected: selectedRow === index }"
       @click="selectRow(index)"
     >
-      <img :src="item.avatar" alt="avatar" class="avatar" />
+      <img :src="item.avatarUrl" alt="avatar" class="avatar" />
       <span>{{ item.name }}</span>
     </div>
   </div>
   <div class="contributor-details-page">
     <!-- 个人信息区 -->
     <el-card class="personal-info" shadow="hover">
-      <img src="" alt="头像" class="avatar" />
-      <h2>用户名</h2>
-      <p>简介信息</p>
-      <p>国家 | 公司 | 加入时间</p>
+      <img :src="selectedContributor.avatarUrl" alt="头像" class="avatar" />
+      <h2>{{ selectedContributor.name }}</h2>
+      <p>{{ selectedContributor.bio }}</p>
+      <p>
+        {{ selectedContributor.nation }} | {{ selectedContributor.field }} |
+        加入时间: {{ formatDate(selectedContributor.createdAt) }}
+      </p>
     </el-card>
 
     <!-- 贡献统计概览 -->
     <el-card class="stats-overview" shadow="hover">
       <div class="flex">
-        <div class="stat-card">总提交次数: 120</div>
-        <div class="stat-card">代码行数增量: 3400</div>
-        <div class="stat-card">代码行数减量: 2200</div>
-        <div class="stat-card">修改文件数: 80</div>
+        <div class="stat-card">
+          总提交次数: {{ selectedContributor.number }}
+        </div>
+        <div class="stat-card">
+          代码行数增量: {{ selectedContributor.totalAdditions }}
+        </div>
+        <div class="stat-card">
+          代码行数减量: {{ selectedContributor.totalDeletions }}
+        </div>
       </div>
     </el-card>
 
     <!-- 提交记录列表 -->
-    <el-card class="commit-records" shadow="hover">
-      <h2>提交记录</h2>
-      <ul>
-        <li>提交标题 - 提交时间 - 提交哈希值 - 代码行增删数</li>
-        <!-- 其他记录 -->
-      </ul>
-    </el-card>
 
-    <!-- 活动时间线 -->
-    <el-card class="activity-timeline" shadow="hover">
-      <h2>活跃时间线</h2>
-      <!-- 图表：提交频率、活跃周期 -->
-    </el-card>
-
-    <!-- 代码变更分析 -->
     <el-card class="code-change-analysis" shadow="hover">
       <h2>代码变更分析</h2>
-      <!-- 图表：增删行数、修改文件分布 -->
+      <div ref="chartRef" style="width: 100%; height: 400px"></div>
     </el-card>
 
-    <!-- 筛选和导出按钮 -->
-    <el-card class="interactive-tools" shadow="hover">
+    <!-- <el-card class="interactive-tools" shadow="hover">
       <div class="button-group">
         <el-button type="primary">日期筛选</el-button>
         <el-button type="primary">文件类型筛选</el-button>
         <el-button type="primary">导出数据</el-button>
       </div>
-    </el-card>
+    </el-card> -->
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-const list = ref([
-  { avatar: "https://via.placeholder.com/40", name: "Alice" },
-  { avatar: "https://via.placeholder.com/40", name: "Bob" },
-  { avatar: "https://via.placeholder.com/40", name: "Charlie" },
-  { avatar: "https://via.placeholder.com/40", name: "David" },
-  { avatar: "https://via.placeholder.com/40", name: "Emma" },
-  { avatar: "https://via.placeholder.com/40", name: "Frank" },
-  { avatar: "https://via.placeholder.com/40", name: "Grace" },
-  { avatar: "https://via.placeholder.com/40", name: "Hannah" },
-  { avatar: "https://via.placeholder.com/40", name: "Ivy" },
-  { avatar: "https://via.placeholder.com/40", name: "Jack" },
-]);
-// 用于记录点击的行号
+import { ref, onMounted, watch, computed } from "vue";
+import axios from "axios";
+import qs from "qs";
+import * as echarts from "echarts";
+
+import { useRepoStore } from "@/stores/repoStore";
+
+const store = useRepoStore();
+const repoUrl = computed(() => store.repoUrl);
+const requestData = { url: repoUrl.value };
+
+const list = ref([]);
 const selectedRow = ref(0);
+const selectedContributor = ref({});
+const chartRef = ref(null);
+let chartInstance = null;
+
+// 初始化和更新图表
+function initChart() {
+  if (chartInstance) {
+    chartInstance.dispose();
+  }
+  chartInstance = echarts.init(chartRef.value);
+
+  const option = {
+    title: {
+      text: "代码增删行数对比",
+      left: "center",
+      textStyle: {
+        color: "#333",
+        fontSize: 18,
+        fontWeight: "bold",
+      },
+    },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: {
+        type: "shadow",
+      },
+    },
+    grid: {
+      left: "10%",
+      right: "10%",
+      bottom: "10%",
+      containLabel: true,
+    },
+    xAxis: {
+      type: "category",
+      data: ["增加行数", "删除行数"],
+      axisLabel: {
+        color: "#666",
+        fontSize: 14,
+      },
+      axisLine: {
+        lineStyle: {
+          color: "#ddd",
+        },
+      },
+    },
+    yAxis: {
+      type: "value",
+      axisLabel: {
+        color: "#666",
+        fontSize: 14,
+      },
+      splitLine: {
+        lineStyle: {
+          type: "dashed",
+          color: "#eee",
+        },
+      },
+      axisLine: {
+        show: false,
+      },
+    },
+    series: [
+      {
+        name: "代码行数",
+        type: "bar",
+        barWidth: "40%",
+        data: [
+          {
+            value: selectedContributor.value.totalAdditions || 0,
+            itemStyle: { color: "rgba(0, 176, 255, 0.8)" },
+          },
+          {
+            value: selectedContributor.value.totalDeletions || 0,
+            itemStyle: { color: "rgba(255, 99, 132, 0.8)" },
+          },
+        ],
+        itemStyle: {
+          color: (params) => params.data.itemStyle.color,
+          borderRadius: [4, 4, 0, 0], // 圆角柱状图
+          shadowColor: "rgba(0, 0, 0, 0.1)",
+          shadowBlur: 10,
+        },
+        label: {
+          show: true,
+          position: "top",
+          fontSize: 14,
+          color: "#333",
+          fontWeight: "bold",
+        },
+        emphasis: {
+          itemStyle: {
+            color: (params) => params.data.itemStyle.color,
+            shadowBlur: 20,
+            shadowColor: "rgba(0, 0, 0, 0.3)",
+          },
+        },
+      },
+    ],
+  };
+
+  chartInstance.setOption(option);
+}
+
+// 异步获取开发者列表并赋值给 list
+async function fetchDevelopers() {
+  try {
+    const url = "http://47.113.195.131:8090/developer/getUrlDeveloper";
+    const params = requestData;
+    const response = await axios.post(
+      `${url}?${qs.stringify(params, { encode: false })}`
+    );
+
+    list.value = response.data.data;
+    if (list.value.length > 0) {
+      selectedContributor.value = list.value[0];
+      initChart();
+    }
+  } catch (error) {
+    console.error("获取用户信息失败:", error);
+  }
+}
 
 // 选择行的方法
 function selectRow(index) {
   selectedRow.value = index;
+  selectedContributor.value = list.value[index];
+  initChart();
 }
 
-// 定义响应式数据
-const message = ref("个人信息");
+// 监视 selectedContributor 变化以更新图表
+watch(selectedContributor, initChart);
+
+// 格式化日期函数
+function formatDate(dateString) {
+  const options = { year: "numeric", month: "2-digit", day: "2-digit" };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+}
+
+// 在组件挂载时调用 fetchDevelopers 以获取并设置列表数据
+onMounted(() => {
+  fetchDevelopers();
+});
 </script>
 
 <style scoped lang="scss">
@@ -156,7 +282,6 @@ const message = ref("个人信息");
 }
 .list-container {
   width: 20vw;
-
   position: fixed;
   top: 160px;
   display: flex;
@@ -174,11 +299,9 @@ const message = ref("个人信息");
     border-radius: 5px;
     transition: background-color 0.3s;
 
-    // 默认样式
     background-color: white;
     color: black;
 
-    // 当选中时的样式
     &.selected {
       background-color: rgb(140, 134, 134);
       color: rgb(250, 246, 246);

@@ -90,7 +90,7 @@ console.log("Initial props data:", props.data);
 .show {
   /* background-color: deeppink; */
   width: 360px;
-  height: 70px;
+  height: 60px;
   display: flex;
   gap: 6px;
   overflow: hidden;
